@@ -2,7 +2,7 @@ export const OPENALEX_BASE = "https://api.openalex.org";
 export const OPENAIRE_BASE = "https://api.openaire.eu/graph/v1";
 
 // Polite Pool — identifies us to OpenAlex for higher rate limits.
-export const MAILTO = "mcavalleri@wiley.com";
+export const MAILTO = "YOUR_EMAIL_HERE@example.com";
 
 export const OPENALEX_PER_PAGE = 200;
 export const OPENAIRE_PER_PAGE = 50;
