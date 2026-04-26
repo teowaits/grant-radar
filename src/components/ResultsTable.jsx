@@ -6,26 +6,19 @@ import { SourceBadge, ExportButton } from "./shared.jsx";
 import SortableHeader from "./SortableHeader.jsx";
 import FilterBar from "./FilterBar.jsx";
 import CoverageBanner from "./CoverageBanner.jsx";
+import SourceAsymmetryWarning from "./SourceAsymmetryWarning.jsx";
 import ExpandableRow from "./ExpandableRow.jsx";
 
 const PAGE_SIZE = 50;
 
 const COL = "1fr 1fr 1fr 110px 80px 90px 28px";
 
-export default function ResultsTable({ grants, totalFound, fetchedAt, sort, onSort, query }) {
-  const [filterState, setFilterState] = useState({
-    recencyMonths: 48,
-    active: "both",
-    funders: [],
-    sizeBands: [],
-    countries: [],
-    sources: ["openalex", "openaire"],
-  });
+export default function ResultsTable({ grants, totalFound, fetchedAt, sort, onSort, query, filterState, onFilterChange }) {
   const [expandedId, setExpandedId] = useState(null);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const handleFilterChange = patch => {
-    setFilterState(prev => ({ ...prev, ...patch }));
+    onFilterChange(patch);
     setVisibleCount(PAGE_SIZE);
   };
 
@@ -68,6 +61,8 @@ export default function ResultsTable({ grants, totalFound, fetchedAt, sort, onSo
           <ExportButton onClick={handleExport} />
         </span>
       </div>
+
+      <SourceAsymmetryWarning totalFound={totalFound} />
 
       <FilterBar grants={grants} filterState={filterState} onFilterChange={handleFilterChange} />
 

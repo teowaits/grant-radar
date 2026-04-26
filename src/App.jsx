@@ -1,5 +1,5 @@
 import { useReducer, useCallback } from "react";
-import { C, ghostBtn, DEFAULT_RECENCY } from "./constants.js";
+import { C, DEFAULT_RECENCY } from "./constants.js";
 import { useSearch } from "./hooks/useSearch.js";
 import SearchPanel from "./components/SearchPanel.jsx";
 import ResultsTable from "./components/ResultsTable.jsx";
@@ -11,17 +11,33 @@ const TABS = [
   { key: "about", label: "About" },
 ];
 
+const initialFilters = {
+  recencyMonths: DEFAULT_RECENCY,
+  active: "both",
+  funders: [],
+  sizeBands: [],
+  countries: [],
+  sources: ["openalex", "openaire"],
+};
+
 const initialUIState = {
   tab: "search",
   sort: { column: "recency", direction: "asc" },
   query: "",
+  filters: initialFilters,
 };
 
 function uiReducer(state, action) {
   switch (action.type) {
-    case "SET_TAB": return { ...state, tab: action.tab };
-    case "SET_SORT": return { ...state, sort: action.sort };
-    case "SET_QUERY": return { ...state, query: action.query };
+    case "SET_TAB":    return { ...state, tab: action.tab };
+    case "SET_SORT":   return { ...state, sort: action.sort };
+    case "SET_QUERY":  return { ...state, query: action.query };
+    case "SET_FILTERS":
+      return { ...state, filters: { ...state.filters, ...action.patch } };
+    // Clear result-time filters (funder/size/country) on each new search; keep
+    // recency/active/sources so the editor's intent carries over.
+    case "RESET_RESULT_FILTERS":
+      return { ...state, filters: { ...state.filters, funders: [], sizeBands: [], countries: [] } };
     default: return state;
   }
 }
@@ -30,13 +46,18 @@ export default function App() {
   const [ui, uiDispatch] = useReducer(uiReducer, initialUIState);
   const { state: searchState, run, cancel } = useSearch();
 
-  const handleSearch = useCallback(({ keywords, topicIds, sources }) => {
+  const handleFilterChange = useCallback(patch => {
+    uiDispatch({ type: "SET_FILTERS", patch });
+  }, []);
+
+  const handleSearch = useCallback(({ keywords, topicIds }) => {
     uiDispatch({ type: "SET_QUERY", query: keywords });
     uiDispatch({ type: "SET_TAB", tab: "results" });
-    run({ keywords, sources: sources ?? ["openalex", "openaire"] });
-  }, [run]);
+    uiDispatch({ type: "RESET_RESULT_FILTERS" });
+    run({ keywords, sources: ui.filters.sources });
+  }, [run, ui.filters.sources]);
 
-  const handleSort = sort => uiDispatch({ type: "SET_SORT", sort });
+  const handleSort = useCallback(sort => uiDispatch({ type: "SET_SORT", sort }), []);
 
   const hasResults = searchState.canonical.length > 0;
   const isLoading = searchState.loading;
@@ -96,8 +117,8 @@ export default function App() {
           loading={isLoading}
           progress={searchState.progress}
           errors={searchState.errors}
-          filterState={{ recencyMonths: DEFAULT_RECENCY, active: "both", sources: ["openalex", "openaire"] }}
-          onFilterChange={() => {}}
+          filterState={ui.filters}
+          onFilterChange={handleFilterChange}
         />
       )}
 
@@ -118,6 +139,8 @@ export default function App() {
               sort={ui.sort}
               onSort={handleSort}
               query={ui.query}
+              filterState={ui.filters}
+              onFilterChange={handleFilterChange}
             />
           )}
         </>

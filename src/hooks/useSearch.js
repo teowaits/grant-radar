@@ -68,6 +68,12 @@ export function useSearch() {
 
     dispatch({ type: "START" });
 
+    // Dev-only delay so the cancel path can be exercised manually before deploy.
+    if (import.meta.env.DEV) {
+      await new Promise(r => setTimeout(r, 500));
+      if (signal.aborted) return;
+    }
+
     const tasks = [];
 
     if (sources.includes("openalex")) {
